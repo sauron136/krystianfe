@@ -1,69 +1,26 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect, createContext, useContext } from 'react';
-import Home from './pages/Home';
-import About from './pages/About';
-import Projects from './pages/Projects';
-import Contact from './pages/Contact';
-import Devlog from './pages/Devlog';
-import Admin from './pages/Admin';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Login from "./pages/Admin/Login";
+import Dashboard from "./pages/Admin/Dashboard";
+import Posts from "./pages/Admin/Posts";
+import Categories from "./pages/Admin/Categories";
+import Projects from "./pages/Admin/Projects";
+import Experience from "./pages/Admin/Experience";
+import About from "./pages/Admin/About";
 
-export const AuthContext = createContext({
-  token: '',
-  setToken: (_: string) => {},
-  logout: () => {},
-});
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { token } = useContext(AuthContext);
-  const location = useLocation();
-  if (!token) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  return <>{children}</>;
-};
-
-const App = () => {
-  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
-  const navigate = useNavigate();
-
-  const logout = () => {
-    setToken('');
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
-
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-    }
-  }, [token]);
-
+function App() {
   return (
-    <AuthContext.Provider value={{ token, setToken, logout }}>
-      <div className="flex flex-col min-h-screen">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/devlog" element={<Devlog />} />
-          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-          {!token && <Route path="/login" element={<Login />} />}
-          {!token && <Route path="/register" element={<Register />} />}
-          {token && <Route path="/login" element={<Navigate to="/admin" replace />} />}
-          {token && <Route path="/register" element={<Navigate to="/admin" replace />} />}
-        </Routes>
-      </div>
-    </AuthContext.Provider>
+    <Router>
+      <Routes>
+        <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin/dashboard" element={<Dashboard />} />
+        <Route path="/admin/posts" element={<Posts />} />
+        <Route path="/admin/categories" element={<Categories />} />
+        <Route path="/admin/projects" element={<Projects />} />
+        <Route path="/admin/experience" element={<Experience />} />
+        <Route path="/admin/about" element={<About />} />
+      </Routes>
+    </Router>
   );
-};
+}
 
-const AppWrapper = () => (
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-);
-
-export default AppWrapper;
+export default App;

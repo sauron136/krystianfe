@@ -7,8 +7,14 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
+  // Only add Authorization header for protected endpoints
+  const isPublicEndpoint = config.url?.startsWith('/posts') || config.url?.startsWith('/projects');
+  if (token && !isPublicEndpoint) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    if (config.headers && 'Authorization' in config.headers) {
+      delete config.headers.Authorization;
+    }
   }
   return config;
 });
