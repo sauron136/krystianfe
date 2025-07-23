@@ -1,5 +1,3 @@
-console.log('portfolio.ts file loaded');
-
 import apiClient from './client';
 
 export const getAbout = async () => {
@@ -22,13 +20,13 @@ export const getCategories = async () => {
   return response.data;
 };
 
-export const createAbout = async (data) => {
+export const createAbout = async (data: any) => {
   const response = await apiClient.post('/api/about', data);
   return response.data;
 };
 
 export const updateAbout = async (data: any) => {
-  const response = await fetch(`${API_BASE_URL}/about/1`, {
+  const response = await apiClient.put('/api/about/1', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
