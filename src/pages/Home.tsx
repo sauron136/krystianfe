@@ -1,9 +1,9 @@
 import React from 'react';
 import Layout from '@/components/Layout';
-import Hero from '@/components/Hero';
-import About from '@/components/About';
-import Experience from '@/components/Experience';
-import Projects from '@/components/Projects';
+import Hero from '@/components/sections/Hero';
+import About from '@/components/sections/AboutSection';
+import Experience from '@/components/sections/ExperienceSection';
+import Projects from '@/components/sections/ProjectsSection';
 import Writing from '@/components/Writing';
 import Contact from '@/components/Contact';
 
