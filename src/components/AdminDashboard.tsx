@@ -1,650 +1,626 @@
-import { useState, useEffect } from "react";
-import { Card } from "./ui/card";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Label } from "./ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Badge } from "./ui/badge";
-import { X, Plus, Edit, Trash2, Eye, Settings } from "lucide-react";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { X, Plus, Edit, Trash2, Save } from 'lucide-react';
+import { PersonalInfo, Experience, Project, BlogPost } from '../App';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Label } from './ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { calculateReadTimeFromSources } from './utils/readTime';
 
-// Mock data types
-interface Experience {
-  id: string;
-  period: string;
-  title: string;
-  company: string;
-  description: string;
-  technologies: string[];
-  link?: string;
+interface AdminDashboardProps {
+  personalInfo: PersonalInfo | null;
+  experiences: Experience[];
+  projects: Project[];
+  blogPosts: BlogPost[];
+  onUpdatePersonalInfo: (info: PersonalInfo) => void;
+  onUpdateExperiences: (experiences: Experience[]) => void;
+  onUpdateProjects: (projects: Project[]) => void;
+  onUpdateBlogPosts: (posts: BlogPost[]) => void;
+  onExit: () => void;
 }
 
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  technologies: string[];
-  link?: string;
-  image?: string;
-}
+type EditMode = {
+  type: 'experience' | 'project' | 'blog' | null;
+  id: string | null;
+  isNew: boolean;
+};
 
-interface BlogPost {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  link?: string;
-}
+export function AdminDashboard({
+  personalInfo,
+  experiences,
+  projects,
+  blogPosts,
+  onUpdatePersonalInfo,
+  onUpdateExperiences,
+  onUpdateProjects,
+  onUpdateBlogPosts,
+  onExit
+}: AdminDashboardProps) {
+  const [editMode, setEditMode] = useState<EditMode>({ type: null, id: null, isNew: false });
+  const [formData, setFormData] = useState<any>({});
 
-export function AdminDashboard() {
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("experiences");
-
-  // Initialize with mock data
-  useEffect(() => {
-    // Mock API call - replace with real Supabase calls
-    setExperiences([
-      {
-        id: "1",
-        period: "2024 — PRESENT",
-        title: "Senior Frontend Engineer, Accessibility",
-        company: "Klaviyo",
-        description: "Build and maintain critical components used to construct Klaviyo's frontend, across the whole product. Work closely with cross-functional teams, including designers, product managers, and other engineers.",
-        technologies: ["JavaScript", "TypeScript", "React", "Storybook"],
-        link: "#"
-      }
-    ]);
-
-    setProjects([
-      {
-        id: "1",
-        title: "Build a Spotify Connected App",
-        description: "Video course that teaches how to build a web app with the Spotify Web API. Topics covered include the principles of REST APIs, user auth flows, Node, Express, React, Styled Components, and more.",
-        technologies: ["React", "Express", "Spotify API", "Heroku"],
-        link: "#",
-        image: "https://images.unsplash.com/photo-1611532736793-4b9fd2e91ba4?w=200&h=120&fit=crop&crop=center"
-      }
-    ]);
-
-    setBlogPosts([
-      {
-        id: "1",
-        title: "Building Accessible React Components",
-        description: "A deep dive into creating React components that are accessible by default, covering ARIA patterns, keyboard navigation, and screen reader support.",
-        date: "Mar 2024",
-        link: "#"
-      }
-    ]);
-  }, []);
-
-  const handleSave = (data: any, type: string) => {
-    // Mock API call - replace with real Supabase operations
-    if (editingItem) {
-      // Update existing item
-      if (type === "experience") {
-        setExperiences(prev => prev.map(item => item.id === editingItem.id ? { ...data, id: editingItem.id } : item));
-      } else if (type === "project") {
-        setProjects(prev => prev.map(item => item.id === editingItem.id ? { ...data, id: editingItem.id } : item));
-      } else if (type === "blog") {
-        setBlogPosts(prev => prev.map(item => item.id === editingItem.id ? { ...data, id: editingItem.id } : item));
-      }
-      toast("Item updated successfully!");
-    } else {
-      // Create new item
-      const newItem = { ...data, id: Date.now().toString() };
-      if (type === "experience") {
-        setExperiences(prev => [...prev, newItem]);
-      } else if (type === "project") {
-        setProjects(prev => [...prev, newItem]);
-      } else if (type === "blog") {
-        setBlogPosts(prev => [...prev, newItem]);
-      }
-      toast("Item created successfully!");
+  // Personal Info handlers
+  const handlePersonalInfoUpdate = async (updatedInfo: PersonalInfo) => {
+    try {
+      // API call: const response = await fetch('/api/personal-info', { method: 'PUT', body: JSON.stringify(updatedInfo) });
+      onUpdatePersonalInfo(updatedInfo);
+    } catch (error) {
+      console.error('Error updating personal info:', error);
     }
-    
-    setIsDialogOpen(false);
-    setEditingItem(null);
   };
 
-  const handleDelete = (id: string, type: string) => {
-    // Mock API call - replace with real Supabase operations
-    if (type === "experience") {
-      setExperiences(prev => prev.filter(item => item.id !== id));
-    } else if (type === "project") {
-      setProjects(prev => prev.filter(item => item.id !== id));
-    } else if (type === "blog") {
-      setBlogPosts(prev => prev.filter(item => item.id !== id));
+  // Experience handlers
+  const handleExperienceAdd = () => {
+    setEditMode({ type: 'experience', id: 'new', isNew: true });
+    setFormData({
+      title: '',
+      company: '',
+      duration: '',
+      description: '',
+      technologies: [],
+      current: false
+    });
+  };
+
+  const handleExperienceEdit = (exp: Experience) => {
+    setEditMode({ type: 'experience', id: exp.id, isNew: false });
+    setFormData({ ...exp, technologies: exp.technologies.join(', ') });
+  };
+
+  const handleExperienceSave = async () => {
+    try {
+      const expData = {
+        ...formData,
+        technologies: formData.technologies.split(',').map((t: string) => t.trim()),
+        id: editMode.isNew ? `exp_${Date.now()}` : formData.id
+      };
+
+      if (editMode.isNew) {
+        onUpdateExperiences([...experiences, expData]);
+      } else {
+        onUpdateExperiences(experiences.map(exp => exp.id === expData.id ? expData : exp));
+      }
+      
+      setEditMode({ type: null, id: null, isNew: false });
+      setFormData({});
+    } catch (error) {
+      console.error('Error saving experience:', error);
     }
-    toast("Item deleted successfully!");
   };
 
-  const openEditDialog = (item: any, type: string) => {
-    setEditingItem({ ...item, type });
-    setIsDialogOpen(true);
+  const handleExperienceDelete = async (id: string) => {
+    try {
+      onUpdateExperiences(experiences.filter(exp => exp.id !== id));
+    } catch (error) {
+      console.error('Error deleting experience:', error);
+    }
   };
 
-  const openCreateDialog = (type: string) => {
-    setEditingItem(null);
-    setActiveTab(type);
-    setIsDialogOpen(true);
+  // Project handlers
+  const handleProjectAdd = () => {
+    setEditMode({ type: 'project', id: 'new', isNew: true });
+    setFormData({
+      title: '',
+      description: '',
+      technologies: [],
+      githubUrl: '',
+      liveUrl: '',
+      image: ''
+    });
   };
+
+  const handleProjectEdit = (project: Project) => {
+    setEditMode({ type: 'project', id: project.id, isNew: false });
+    setFormData({ ...project, technologies: project.technologies.join(', ') });
+  };
+
+  const handleProjectSave = async () => {
+    try {
+      const projectData = {
+        ...formData,
+        technologies: formData.technologies.split(',').map((t: string) => t.trim()),
+        id: editMode.isNew ? `proj_${Date.now()}` : formData.id
+      };
+
+      if (editMode.isNew) {
+        onUpdateProjects([...projects, projectData]);
+      } else {
+        onUpdateProjects(projects.map(proj => proj.id === projectData.id ? projectData : proj));
+      }
+      
+      setEditMode({ type: null, id: null, isNew: false });
+      setFormData({});
+    } catch (error) {
+      console.error('Error saving project:', error);
+    }
+  };
+
+  const handleProjectDelete = async (id: string) => {
+    try {
+      onUpdateProjects(projects.filter(proj => proj.id !== id));
+    } catch (error) {
+      console.error('Error deleting project:', error);
+    }
+  };
+
+  // Blog handlers
+  const handleBlogAdd = () => {
+    setEditMode({ type: 'blog', id: 'new', isNew: true });
+    setFormData({
+      title: '',
+      excerpt: '',
+      publishedAt: new Date().toISOString().split('T')[0],
+      readTime: '',
+      slug: '',
+      image: ''
+    });
+  };
+
+  const handleBlogEdit = (post: BlogPost) => {
+    setEditMode({ type: 'blog', id: post.id, isNew: false });
+    setFormData({ ...post, publishedAt: post.publishedAt.split('T')[0] });
+  };
+
+  const handleBlogSave = async () => {
+    try {
+      // Calculate dynamic read time based on title and excerpt
+      const dynamicReadTime = calculateReadTimeFromSources(formData.title, formData.excerpt);
+      
+      const blogData = {
+        ...formData,
+        readTime: dynamicReadTime, // Use calculated read time
+        id: editMode.isNew ? `blog_${Date.now()}` : formData.id
+      };
+
+      if (editMode.isNew) {
+        onUpdateBlogPosts([...blogPosts, blogData]);
+      } else {
+        onUpdateBlogPosts(blogPosts.map(post => post.id === blogData.id ? blogData : post));
+      }
+      
+      setEditMode({ type: null, id: null, isNew: false });
+      setFormData({});
+    } catch (error) {
+      console.error('Error saving blog post:', error);
+    }
+  };
+
+  const handleBlogDelete = async (id: string) => {
+    try {
+      onUpdateBlogPosts(blogPosts.filter(post => post.id !== id));
+    } catch (error) {
+      console.error('Error deleting blog post:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditMode({ type: null, id: null, isNew: false });
+    setFormData({});
+  };
+
+  // Calculate preview read time when editing blog posts
+  const previewReadTime = formData.title && formData.excerpt 
+    ? calculateReadTimeFromSources(formData.title, formData.excerpt)
+    : '';
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
-      {/* Header */}
-      <div className="border-b border-slate-700 bg-slate-800/50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Settings className="h-6 w-6 text-teal-400" />
-              <h1 className="text-xl font-semibold">Portfolio Admin Dashboard</h1>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.open("/", "_blank")}
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              View Live Site
-            </Button>
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl">Admin Dashboard</h1>
+          <Button onClick={onExit} variant="outline" size="sm">
+            <X className="w-4 h-4 mr-2" />
+            Exit Admin
+          </Button>
         </div>
-      </div>
 
-      <div className="container mx-auto px-6 py-8">
-        <Tabs defaultValue="experiences" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-800">
-            <TabsTrigger value="experiences">Experiences</TabsTrigger>
+        <Tabs defaultValue="personal" className="space-y-8">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="personal">Personal Info</TabsTrigger>
+            <TabsTrigger value="experience">Experience</TabsTrigger>
             <TabsTrigger value="projects">Projects</TabsTrigger>
-            <TabsTrigger value="blog">Blog Posts</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
           </TabsList>
 
-          {/* Experiences Tab */}
-          <TabsContent value="experiences" className="space-y-4">
+          {/* Personal Info Tab */}
+          <TabsContent value="personal" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {personalInfo && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name">Name</Label>
+                      <Input
+                        id="name"
+                        value={personalInfo.name}
+                        onChange={(e) => handlePersonalInfoUpdate({
+                          ...personalInfo,
+                          name: e.target.value
+                        })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={personalInfo.title}
+                        onChange={(e) => handlePersonalInfoUpdate({
+                          ...personalInfo,
+                          title: e.target.value
+                        })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        value={personalInfo.bio}
+                        onChange={(e) => handlePersonalInfoUpdate({
+                          ...personalInfo,
+                          bio: e.target.value
+                        })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={personalInfo.email}
+                        onChange={(e) => handlePersonalInfoUpdate({
+                          ...personalInfo,
+                          email: e.target.value
+                        })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={personalInfo.location}
+                        onChange={(e) => handlePersonalInfoUpdate({
+                          ...personalInfo,
+                          location: e.target.value
+                        })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Experience Tab */}
+          <TabsContent value="experience" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Manage Experiences</h2>
-              <Button onClick={() => openCreateDialog("experiences")}>
-                <Plus className="h-4 w-4 mr-2" />
+              <h2 className="text-2xl">Experience</h2>
+              <Button onClick={handleExperienceAdd}>
+                <Plus className="w-4 h-4 mr-2" />
                 Add Experience
               </Button>
             </div>
-            
-            <div className="grid gap-4">
-              {experiences.map((exp) => (
-                <Card key={exp.id} className="p-6 bg-slate-800/50 border-slate-700">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-slate-200">{exp.title}</h3>
-                        <span className="text-slate-400">·</span>
-                        <span className="text-slate-400">{exp.company}</span>
-                      </div>
-                      <p className="text-sm text-slate-500 mb-2">{exp.period}</p>
-                      <p className="text-slate-400 mb-3 line-clamp-2">{exp.description}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {exp.technologies.map((tech) => (
-                          <Badge key={tech} variant="secondary" className="bg-teal-400/10 text-teal-300">
-                            {tech}
-                          </Badge>
-                        ))}
-                      </div>
+
+            {editMode.type === 'experience' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editMode.isNew ? 'Add' : 'Edit'} Experience</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="exp-title">Title</Label>
+                      <Input
+                        id="exp-title"
+                        value={formData.title || ''}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      />
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(exp, "experience")}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(exp.id, "experience")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div>
+                      <Label htmlFor="exp-company">Company</Label>
+                      <Input
+                        id="exp-company"
+                        value={formData.company || ''}
+                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="exp-duration">Duration</Label>
+                      <Input
+                        id="exp-duration"
+                        value={formData.duration || ''}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="exp-technologies">Technologies (comma-separated)</Label>
+                      <Input
+                        id="exp-technologies"
+                        value={formData.technologies || ''}
+                        onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="exp-description">Description</Label>
+                      <Textarea
+                        id="exp-description"
+                        value={formData.description || ''}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
                     </div>
                   </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleExperienceSave}>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button variant="outline" onClick={handleCancel}>
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid gap-4">
+              {experiences.map((exp) => (
+                <Card key={exp.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg">{exp.title} at {exp.company}</h3>
+                        <p className="text-sm text-slate-400">{exp.duration}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleExperienceEdit(exp)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleExperienceDelete(exp.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-300 mb-2">{exp.description}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {exp.technologies.map((tech) => (
+                        <span key={tech} className="px-2 py-1 bg-teal-400/10 text-teal-300 rounded text-xs">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>
           </TabsContent>
 
           {/* Projects Tab */}
-          <TabsContent value="projects" className="space-y-4">
+          <TabsContent value="projects" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Manage Projects</h2>
-              <Button onClick={() => openCreateDialog("projects")}>
-                <Plus className="h-4 w-4 mr-2" />
+              <h2 className="text-2xl">Projects</h2>
+              <Button onClick={handleProjectAdd}>
+                <Plus className="w-4 h-4 mr-2" />
                 Add Project
               </Button>
             </div>
-            
-            <div className="grid gap-4">
-              {projects.map((project) => (
-                <Card key={project.id} className="p-6 bg-slate-800/50 border-slate-700">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-200 mb-2">{project.title}</h3>
-                      <p className="text-slate-400 mb-3 line-clamp-2">{project.description}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {project.technologies.map((tech) => (
-                          <Badge key={tech} variant="secondary" className="bg-teal-400/10 text-teal-300">
-                            {tech}
-                          </Badge>
-                        ))}
-                      </div>
+
+            {editMode.type === 'project' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editMode.isNew ? 'Add' : 'Edit'} Project</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="proj-title">Title</Label>
+                      <Input
+                        id="proj-title"
+                        value={formData.title || ''}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      />
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(project, "project")}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(project.id, "project")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div>
+                      <Label htmlFor="proj-image">Image URL</Label>
+                      <Input
+                        id="proj-image"
+                        value={formData.image || ''}
+                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="proj-github">GitHub URL</Label>
+                      <Input
+                        id="proj-github"
+                        value={formData.githubUrl || ''}
+                        onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="proj-live">Live URL (optional)</Label>
+                      <Input
+                        id="proj-live"
+                        value={formData.liveUrl || ''}
+                        onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="proj-technologies">Technologies (comma-separated)</Label>
+                      <Input
+                        id="proj-technologies"
+                        value={formData.technologies || ''}
+                        onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="proj-description">Description</Label>
+                      <Textarea
+                        id="proj-description"
+                        value={formData.description || ''}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      />
                     </div>
                   </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleProjectSave}>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button variant="outline" onClick={handleCancel}>
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid gap-4">
+              {projects.map((project) => (
+                <Card key={project.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg">{project.title}</h3>
+                        <p className="text-sm text-slate-300 mb-2">{project.description}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleProjectEdit(project)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleProjectDelete(project.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {project.technologies.map((tech) => (
+                        <span key={tech} className="px-2 py-1 bg-teal-400/10 text-teal-300 rounded text-xs">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>
           </TabsContent>
 
-          {/* Blog Posts Tab */}
-          <TabsContent value="blog" className="space-y-4">
+          {/* Blog Tab */}
+          <TabsContent value="blog" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Manage Blog Posts</h2>
-              <Button onClick={() => openCreateDialog("blog")}>
-                <Plus className="h-4 w-4 mr-2" />
+              <h2 className="text-2xl">Blog Posts</h2>
+              <Button onClick={handleBlogAdd}>
+                <Plus className="w-4 h-4 mr-2" />
                 Add Blog Post
               </Button>
             </div>
-            
+
+            {editMode.type === 'blog' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editMode.isNew ? 'Add' : 'Edit'} Blog Post</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="blog-title">Title</Label>
+                      <Input
+                        id="blog-title"
+                        value={formData.title || ''}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="blog-slug">Slug</Label>
+                      <Input
+                        id="blog-slug"
+                        value={formData.slug || ''}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="blog-date">Published Date</Label>
+                      <Input
+                        id="blog-date"
+                        type="date"
+                        value={formData.publishedAt || ''}
+                        onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="blog-image">Featured Image URL</Label>
+                      <Input
+                        id="blog-image"
+                        value={formData.image || ''}
+                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="blog-excerpt">Excerpt</Label>
+                      <Textarea
+                        id="blog-excerpt"
+                        value={formData.excerpt || ''}
+                        onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                      />
+                    </div>
+                    {previewReadTime && (
+                      <div className="col-span-2">
+                        <div className="bg-teal-400/10 text-teal-300 px-3 py-2 rounded text-sm">
+                          <strong>Calculated Read Time:</strong> {previewReadTime}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleBlogSave}>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                    <Button variant="outline" onClick={handleCancel}>
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid gap-4">
               {blogPosts.map((post) => (
-                <Card key={post.id} className="p-6 bg-slate-800/50 border-slate-700">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-200 mb-2">{post.title}</h3>
-                      <p className="text-sm text-slate-500 mb-2">{post.date}</p>
-                      <p className="text-slate-400 line-clamp-2">{post.description}</p>
+                <Card key={post.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg">{post.title}</h3>
+                        <p className="text-sm text-slate-400">
+                          {post.publishedAt} · 
+                          <span className="bg-teal-400/10 text-teal-300 px-2 py-1 rounded ml-2">
+                            {calculateReadTimeFromSources(post.title, post.excerpt)}
+                          </span>
+                        </p>
+                        <p className="text-sm text-slate-300 mt-2">{post.excerpt}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleBlogEdit(post)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleBlogDelete(post.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(post, "blog")}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(post.id, "blog")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl bg-slate-800 border-slate-700">
-          <DialogHeader>
-            <DialogTitle>
-              {editingItem ? "Edit" : "Create"} {
-                activeTab === "experiences" ? "Experience" : 
-                activeTab === "projects" ? "Project" : "Blog Post"
-              }
-            </DialogTitle>
-          </DialogHeader>
-          
-          {activeTab === "experiences" && (
-            <ExperienceForm 
-              experience={editingItem} 
-              onSave={(data) => handleSave(data, "experience")}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          )}
-          
-          {activeTab === "projects" && (
-            <ProjectForm 
-              project={editingItem} 
-              onSave={(data) => handleSave(data, "project")}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          )}
-          
-          {activeTab === "blog" && (
-            <BlogForm 
-              blogPost={editingItem} 
-              onSave={(data) => handleSave(data, "blog")}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-// Experience Form Component
-function ExperienceForm({ experience, onSave, onCancel }: any) {
-  const [formData, setFormData] = useState({
-    period: experience?.period || "",
-    title: experience?.title || "",
-    company: experience?.company || "",
-    description: experience?.description || "",
-    technologies: experience?.technologies || [],
-    link: experience?.link || ""
-  });
-  const [techInput, setTechInput] = useState("");
-
-  const addTechnology = () => {
-    if (techInput.trim() && !formData.technologies.includes(techInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        technologies: [...prev.technologies, techInput.trim()]
-      }));
-      setTechInput("");
-    }
-  };
-
-  const removeTechnology = (tech: string) => {
-    setFormData(prev => ({
-      ...prev,
-      technologies: prev.technologies.filter(t => t !== tech)
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="period">Period</Label>
-          <Input
-            id="period"
-            value={formData.period}
-            onChange={(e) => setFormData(prev => ({ ...prev, period: e.target.value }))}
-            placeholder="2024 — PRESENT"
-            className="bg-slate-700 border-slate-600"
-          />
-        </div>
-        <div>
-          <Label htmlFor="company">Company</Label>
-          <Input
-            id="company"
-            value={formData.company}
-            onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-            placeholder="Company Name"
-            className="bg-slate-700 border-slate-600"
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="title">Job Title</Label>
-        <Input
-          id="title"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="Senior Frontend Engineer"
-          className="bg-slate-700 border-slate-600"
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Describe your role and responsibilities..."
-          className="bg-slate-700 border-slate-600 min-h-24"
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="link">Link (optional)</Label>
-        <Input
-          id="link"
-          value={formData.link}
-          onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-          placeholder="https://company.com"
-          className="bg-slate-700 border-slate-600"
-        />
-      </div>
-      
-      <div>
-        <Label>Technologies</Label>
-        <div className="flex gap-2 mb-2">
-          <Input
-            value={techInput}
-            onChange={(e) => setTechInput(e.target.value)}
-            placeholder="Add technology"
-            className="bg-slate-700 border-slate-600"
-            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTechnology())}
-          />
-          <Button type="button" onClick={addTechnology}>Add</Button>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {formData.technologies.map((tech) => (
-            <Badge key={tech} variant="secondary" className="bg-teal-400/10 text-teal-300">
-              {tech}
-              <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => removeTechnology(tech)} />
-            </Badge>
-          ))}
-        </div>
-      </div>
-      
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">Save</Button>
-      </div>
-    </form>
-  );
-}
-
-// Project Form Component
-function ProjectForm({ project, onSave, onCancel }: any) {
-  const [formData, setFormData] = useState({
-    title: project?.title || "",
-    description: project?.description || "",
-    technologies: project?.technologies || [],
-    link: project?.link || "",
-    image: project?.image || ""
-  });
-  const [techInput, setTechInput] = useState("");
-
-  const addTechnology = () => {
-    if (techInput.trim() && !formData.technologies.includes(techInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        technologies: [...prev.technologies, techInput.trim()]
-      }));
-      setTechInput("");
-    }
-  };
-
-  const removeTechnology = (tech: string) => {
-    setFormData(prev => ({
-      ...prev,
-      technologies: prev.technologies.filter(t => t !== tech)
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="title">Project Title</Label>
-        <Input
-          id="title"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="My Awesome Project"
-          className="bg-slate-700 border-slate-600"
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Describe your project..."
-          className="bg-slate-700 border-slate-600 min-h-24"
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="link">Project Link (optional)</Label>
-          <Input
-            id="link"
-            value={formData.link}
-            onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-            placeholder="https://project.com"
-            className="bg-slate-700 border-slate-600"
-          />
-        </div>
-        <div>
-          <Label htmlFor="image">Image URL (optional)</Label>
-          <Input
-            id="image"
-            value={formData.image}
-            onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-            placeholder="https://images.unsplash.com/..."
-            className="bg-slate-700 border-slate-600"
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Label>Technologies</Label>
-        <div className="flex gap-2 mb-2">
-          <Input
-            value={techInput}
-            onChange={(e) => setTechInput(e.target.value)}
-            placeholder="Add technology"
-            className="bg-slate-700 border-slate-600"
-            onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTechnology())}
-          />
-          <Button type="button" onClick={addTechnology}>Add</Button>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {formData.technologies.map((tech) => (
-            <Badge key={tech} variant="secondary" className="bg-teal-400/10 text-teal-300">
-              {tech}
-              <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => removeTechnology(tech)} />
-            </Badge>
-          ))}
-        </div>
-      </div>
-      
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">Save</Button>
-      </div>
-    </form>
-  );
-}
-
-// Blog Form Component
-function BlogForm({ blogPost, onSave, onCancel }: any) {
-  const [formData, setFormData] = useState({
-    title: blogPost?.title || "",
-    description: blogPost?.description || "",
-    date: blogPost?.date || "",
-    link: blogPost?.link || ""
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="title">Blog Post Title</Label>
-        <Input
-          id="title"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="My Latest Blog Post"
-          className="bg-slate-700 border-slate-600"
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Brief description of the blog post..."
-          className="bg-slate-700 border-slate-600 min-h-24"
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="date">Date</Label>
-          <Input
-            id="date"
-            value={formData.date}
-            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-            placeholder="Mar 2024"
-            className="bg-slate-700 border-slate-600"
-          />
-        </div>
-        <div>
-          <Label htmlFor="link">Link (optional)</Label>
-          <Input
-            id="link"
-            value={formData.link}
-            onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
-            placeholder="https://blog.com/post"
-            className="bg-slate-700 border-slate-600"
-          />
-        </div>
-      </div>
-      
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button type="submit">Save</Button>
-      </div>
-    </form>
   );
 }

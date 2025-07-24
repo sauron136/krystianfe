@@ -1,4 +1,6 @@
-// Mock data service - replace with real Supabase operations when connected
+import apiClient from './apiClient';
+
+
 
 export interface Experience {
   id: string;
@@ -27,247 +29,233 @@ export interface BlogPost {
   link?: string;
 }
 
-// Mock localStorage-based data storage
-const STORAGE_KEYS = {
-  EXPERIENCES: 'portfolio_experiences',
-  PROJECTS: 'portfolio_projects',
-  BLOG_POSTS: 'portfolio_blog_posts'
-};
-
-// Initialize with default data
-const initializeData = () => {
-  if (!localStorage.getItem(STORAGE_KEYS.EXPERIENCES)) {
-    const defaultExperiences: Experience[] = [
-      {
-        id: "1",
-        period: "2024 — PRESENT",
-        title: "Senior Frontend Engineer, Accessibility",
-        company: "Klaviyo",
-        description: "Build and maintain critical components used to construct Klaviyo's frontend, across the whole product. Work closely with cross-functional teams, including designers, product managers, and other engineers, to translate designs into intuitive, optimized UI components that help deliver thoughtful design with robust engineering.",
-        technologies: ["JavaScript", "TypeScript", "React", "Storybook"],
-        link: "#"
-      },
-      {
-        id: "2",
-        period: "2018 — 2024",
-        title: "Lead Engineer",
-        company: "Upstatement",
-        description: "Worked with the UI team to engineer and improve major features of Netlify's platform, with a focus on user experience and customer-facing features. Led process for improving the accessibility of the platform across the entire product.",
-        technologies: ["HTML", "CSS", "JavaScript", "jQuery"]
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.EXPERIENCES, JSON.stringify(defaultExperiences));
-  }
-
-  if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) {
-    const defaultProjects: Project[] = [
-      {
-        id: "1",
-        title: "Build a Spotify Connected App",
-        description: "Video course that teaches how to build a web app with the Spotify Web API. Topics covered include the principles of REST APIs, user auth flows, Node, Express, React, Styled Components, and more.",
-        technologies: ["React", "Express", "Spotify API", "Heroku"],
-        link: "#",
-        image: "https://images.unsplash.com/photo-1611532736793-4b9fd2e91ba4?w=200&h=120&fit=crop&crop=center"
-      },
-      {
-        id: "2",
-        title: "Spotify Profile",
-        description: "Web app for visualizing personalized Spotify data. View your top artists, top tracks, recently played tracks, and detailed audio information about each track.",
-        technologies: ["React", "Express", "Spotify API", "Heroku"],
-        link: "#",
-        image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=200&h=120&fit=crop&crop=center"
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(defaultProjects));
-  }
-
-  if (!localStorage.getItem(STORAGE_KEYS.BLOG_POSTS)) {
-    const defaultBlogPosts: BlogPost[] = [
-      {
-        id: "1",
-        title: "Building Accessible React Components",
-        description: "A deep dive into creating React components that are accessible by default, covering ARIA patterns, keyboard navigation, and screen reader support.",
-        date: "Mar 2024",
-        link: "#"
-      },
-      {
-        id: "2",
-        title: "Modern CSS Techniques for 2024",
-        description: "Exploring the latest CSS features including container queries, cascade layers, and modern layout techniques that are changing how we build interfaces.",
-        date: "Jan 2024",
-        link: "#"
-      }
-    ];
-    localStorage.setItem(STORAGE_KEYS.BLOG_POSTS, JSON.stringify(defaultBlogPosts));
-  }
-};
-
-// Initialize data on first load
-if (typeof window !== 'undefined') {
-  initializeData();
+export interface AboutParagraph {
+  id: string;
+  order: number;
+  text: string;
 }
 
-// Experience CRUD operations
-export const experienceService = {
-  getAll: (): Experience[] => {
-    const data = localStorage.getItem(STORAGE_KEYS.EXPERIENCES);
-    return data ? JSON.parse(data) : [];
-  },
+export interface About {
+  id: string;
+  paragraphs: AboutParagraph[];
+}
 
-  create: (experience: Omit<Experience, 'id'>): Experience => {
-    const experiences = experienceService.getAll();
-    const newExperience: Experience = {
-      ...experience,
-      id: Date.now().toString()
-    };
-    experiences.push(newExperience);
-    localStorage.setItem(STORAGE_KEYS.EXPERIENCES, JSON.stringify(experiences));
-    return newExperience;
-  },
-
-  update: (id: string, experience: Partial<Experience>): Experience | null => {
-    const experiences = experienceService.getAll();
-    const index = experiences.findIndex(exp => exp.id === id);
-    if (index === -1) return null;
-
-    experiences[index] = { ...experiences[index], ...experience };
-    localStorage.setItem(STORAGE_KEYS.EXPERIENCES, JSON.stringify(experiences));
-    return experiences[index];
-  },
-
-  delete: (id: string): boolean => {
-    const experiences = experienceService.getAll();
-    const filteredExperiences = experiences.filter(exp => exp.id !== id);
-    if (filteredExperiences.length === experiences.length) return false;
-
-    localStorage.setItem(STORAGE_KEYS.EXPERIENCES, JSON.stringify(filteredExperiences));
-    return true;
-  }
-};
-
-// Project CRUD operations
-export const projectService = {
-  getAll: (): Project[] => {
-    const data = localStorage.getItem(STORAGE_KEYS.PROJECTS);
-    return data ? JSON.parse(data) : [];
-  },
-
-  create: (project: Omit<Project, 'id'>): Project => {
-    const projects = projectService.getAll();
-    const newProject: Project = {
-      ...project,
-      id: Date.now().toString()
-    };
-    projects.push(newProject);
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
-    return newProject;
-  },
-
-  update: (id: string, project: Partial<Project>): Project | null => {
-    const projects = projectService.getAll();
-    const index = projects.findIndex(proj => proj.id === id);
-    if (index === -1) return null;
-
-    projects[index] = { ...projects[index], ...project };
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
-    return projects[index];
-  },
-
-  delete: (id: string): boolean => {
-    const projects = projectService.getAll();
-    const filteredProjects = projects.filter(proj => proj.id !== id);
-    if (filteredProjects.length === projects.length) return false;
-
-    localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(filteredProjects));
-    return true;
-  }
-};
-
-// Blog post CRUD operations
-export const blogService = {
-  getAll: (): BlogPost[] => {
-    const data = localStorage.getItem(STORAGE_KEYS.BLOG_POSTS);
-    return data ? JSON.parse(data) : [];
-  },
-
-  create: (blogPost: Omit<BlogPost, 'id'>): BlogPost => {
-    const blogPosts = blogService.getAll();
-    const newBlogPost: BlogPost = {
-      ...blogPost,
-      id: Date.now().toString()
-    };
-    blogPosts.push(newBlogPost);
-    localStorage.setItem(STORAGE_KEYS.BLOG_POSTS, JSON.stringify(blogPosts));
-    return newBlogPost;
-  },
-
-  update: (id: string, blogPost: Partial<BlogPost>): BlogPost | null => {
-    const blogPosts = blogService.getAll();
-    const index = blogPosts.findIndex(post => post.id === id);
-    if (index === -1) return null;
-
-    blogPosts[index] = { ...blogPosts[index], ...blogPost };
-    localStorage.setItem(STORAGE_KEYS.BLOG_POSTS, JSON.stringify(blogPosts));
-    return blogPosts[index];
-  },
-
-  delete: (id: string): boolean => {
-    const blogPosts = blogService.getAll();
-    const filteredBlogPosts = blogPosts.filter(post => post.id !== id);
-    if (filteredBlogPosts.length === blogPosts.length) return false;
-
-    localStorage.setItem(STORAGE_KEYS.BLOG_POSTS, JSON.stringify(filteredBlogPosts));
-    return true;
-  }
-};
-
-// When integrating with Supabase, replace the above localStorage operations with:
-/*
-// Example Supabase operations (uncomment when connected):
-
-import { supabase } from './supabase'
-
+// Experience API service
 export const experienceService = {
   getAll: async (): Promise<Experience[]> => {
-    const { data, error } = await supabase
-      .from('experiences')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
+    try {
+      const response = await apiClient.get('/experiences');
+      return response;
+    } catch (error) {
+      console.error('Error fetching experiences:', error);
+      throw error;
+    }
   },
 
   create: async (experience: Omit<Experience, 'id'>): Promise<Experience> => {
-    const { data, error } = await supabase
-      .from('experiences')
-      .insert([experience])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const response = await apiClient.post('/experiences', experience);
+      return response;
+    } catch (error) {
+      console.error('Error creating experience:', error);
+      throw error;
+    }
   },
 
   update: async (id: string, experience: Partial<Experience>): Promise<Experience> => {
-    const { data, error } = await supabase
-      .from('experiences')
-      .update(experience)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      const response = await apiClient.put(`/experiences/${id}`, experience);
+      return response;
+    } catch (error) {
+      console.error('Error updating experience:', error);
+      throw error;
+    }
   },
 
-  delete: async (id: string): Promise<void> => {
-    const { error } = await supabase
-      .from('experiences')
-      .delete()
-      .eq('id', id);
-    
-    if (error) throw error;
+  delete: async (id: string): Promise<boolean> => {
+    try {
+      await apiClient.delete(`/experiences/${id}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting experience:', error);
+      return false;
+    }
   }
 };
-*/
+
+// Project API service
+export const projectService = {
+  getAll: async (): Promise<Project[]> => {
+    try {
+      const response = await apiClient.get('/projects');
+      return response;
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      throw error;
+    }
+  },
+
+  create: async (project: Omit<Project, 'id'>): Promise<Project> => {
+    try {
+      const response = await apiClient.post('/projects', project);
+      return response;
+    } catch (error) {
+      console.error('Error creating project:', error);
+      throw error;
+    }
+  },
+
+  update: async (id: string, project: Partial<Project>): Promise<Project> => {
+    try {
+      const response = await apiClient.put(`/projects/${id}`, project);
+      return response;
+    } catch (error) {
+      console.error('Error updating project:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string): Promise<boolean> => {
+    try {
+      await apiClient.delete(`/projects/${id}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      return false;
+    }
+  }
+};
+
+// Blog API service
+export const blogService = {
+  getAll: async (): Promise<BlogPost[]> => {
+    try {
+      const response = await apiClient.get('/blog-posts');
+      return response;
+    } catch (error) {
+      console.error('Error fetching blog posts:', error);
+      throw error;
+    }
+  },
+
+  create: async (blogPost: Omit<BlogPost, 'id'>): Promise<BlogPost> => {
+    try {
+      const response = await apiClient.post('/blog-posts', blogPost);
+      return response;
+    } catch (error) {
+      console.error('Error creating blog post:', error);
+      throw error;
+    }
+  },
+
+  update: async (id: string, blogPost: Partial<BlogPost>): Promise<BlogPost> => {
+    try {
+      const response = await apiClient.put(`/blog-posts/${id}`, blogPost);
+      return response;
+    } catch (error) {
+      console.error('Error updating blog post:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id: string): Promise<boolean> => {
+    try {
+      await apiClient.delete(`/blog-posts/${id}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting blog post:', error);
+      return false;
+    }
+  }
+};
+
+// About API service
+export const aboutService = {
+  get: async (): Promise<About | null> => {
+    try {
+      const response = await apiClient.get('/about');
+      return response;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      console.error('Error fetching about:', error);
+      throw error;
+    }
+  },
+
+  update: async (about: About): Promise<About> => {
+    try {
+      const response = await apiClient.put('/about', about);
+      return response;
+    } catch (error) {
+      console.error('Error updating about:', error);
+      throw error;
+    }
+  },
+
+  create: async (about: Omit<About, 'id'>): Promise<About> => {
+    try {
+      const response = await apiClient.post('/about', about);
+      return response;
+    } catch (error) {
+      console.error('Error creating about:', error);
+      throw error;
+    }
+  },
+
+  delete: async (): Promise<boolean> => {
+    try {
+      await apiClient.delete('/about');
+      return true;
+    } catch (error) {
+      console.error('Error deleting about:', error);
+      return false;
+    }
+  }
+};
+
+// Auth service for admin functionality
+export const authService = {
+  login: async (username: string, password: string): Promise<{ access_token: string; token_type: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
+      
+      const response = await apiClient.post('/auth/login', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      // Store token for future requests
+      if (response.access_token) {
+        localStorage.setItem('authToken', response.access_token);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Error logging in:', error);
+      throw error;
+    }
+  },
+
+  register: async (userData: { username: string; email: string; password: string }) => {
+    try {
+      const response = await apiClient.post('/auth/register', userData);
+      return response;
+    } catch (error) {
+      console.error('Error registering:', error);
+      throw error;
+    }
+  },
+
+  logout: () => {
+    localStorage.removeItem('authToken');
+  },
+
+  isAuthenticated: (): boolean => {
+    return !!localStorage.getItem('authToken');
+  }
+};
