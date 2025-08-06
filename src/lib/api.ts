@@ -250,6 +250,30 @@ class ApiClient {
   async getTechStackOptions() {
     return this.request('/content/tech-stack-options');
   }
+
+  // User Management (Super Admin only)
+  async getUsers() {
+    return this.request('/auth/users');
+  }
+
+  async createBlogEditor(data: { email: string; password: string }) {
+    return this.request('/auth/create-blog-editor', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async toggleUserStatus(userId: string) {
+    return this.request(`/auth/users/${userId}/toggle-status`, {
+      method: 'PATCH',
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.request(`/auth/users/${userId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
